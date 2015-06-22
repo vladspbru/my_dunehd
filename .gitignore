@@ -1,0 +1,13 @@
+env
+tmp
+tmp.*
+.idea
+.directory
+__pycache__
+*.pyc
+*.~*
+*.cmd
+*.db
+*.log
+
+
