@@ -1,0 +1,272 @@
+DUNE IP CONTROL DOCUMENTATION
+=============================
+
+Introduction
+------------
+
+Dune IP Control feature allows to send HTTP commands to Dune HD media
+player which request the player to do various things, such as:
+- Start playback of the given media content.
+- Control the playback (pause, seek to a given position, etc).
+- Report the current player status (current playback position, etc).
+- Stop playback and switch to various player states (e.g. black screen,
+  standby).
+
+When IP Control functionality is enabled, an HTTP server is running inside the player.
+The HTTP server can be accessed via HTTP port 80.
+
+Firmware and protocol versions
+------------------------------
+
+The first public firmware version which introduced IP Control version was
+110127_2105_beta. In this firmware version, IP Control protocol version "1" was
+used.
+
+Below is the information about IP Control features available in protocol
+version "1". For information about changes and additional features introduced
+in further firmware updates, please look at the end of the document.
+
+---------------------------------------------------------------------------
+
+Features in protocol version "1"
+================================
+
+HTTP-request examples
+---------------------
+
+==== Start playback ====
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_file_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/file.mkv
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_dvd_playback&media_url=smb://10.0.0.1/VideoStorage/SomeFolder/DVDFolder
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_dvd_playback&media_url=storage_name://MyHDD1/SomeFolder/dvd_image.iso
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_bluray_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/BlurayFolder
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_bluray_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/bluray_image.iso
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_file_playback&media_url=http://10.0.0.1/some_upnp_url_path
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_file_playback&media_url=http://www.someinternetradio.org/station1.mp3
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_file_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/file.mkv&speed=0&position=0&black_screen=1&hide_osd=1&action_on_finish=restart_playback
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_dvd_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/DVDFolder&speed=0&position=0&black_screen=1&hide_osd=1&action_on_finish=restart_playback
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_dvd_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/dvd_image.iso&speed=0&position=0&black_screen=1&hide_osd=1&action_on_finish=restart_playback
+
+Here:
+- media_url: any media URL supported by Dune (search for "media_url" in the
+  document http://dune-hd.com/firmware/misc/dune_folder_howto.txt) speed:
+  -1024/-512/-256/-128/-64/0/64/128/256/512/1024 (0 = paused, 64 = 1/4x,
+  256 = 1x, 1024 = 4x, -1024 = -4x).
+- position: initial position (seconds).
+- black_screen: 0|1 (1 means everything (video+OSD) is initially hidden by
+  "black screen" - can be reset to 0 later via set_playback_state command).
+- hide_osd: 0|1 (1 means OSD is initially hidden - can be reset to 0 later
+  via set_playback_state command).
+- action_on_finish: exit|restart_playback ("exit" means exit the playback
+  in the usual way, "restart_playback" means go to the initial playback
+  state).
+
+NOTE: Not all parameters are supported for all file formats. For Blu-ray
+playback, many parameters are not supported (in particular, black_screen
+and hide_osd is not supported).
+
+==== Control playback ====
+
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&speed=256&black_screen=0
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&position=1000
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&speed=0
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&skip_frames=-1
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&skip_frames=1
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&speed=256
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&speed=0&position=0&black_screen=1
+http://10.0.0.1/cgi-bin/do?cmd=set_playback_state&hide_osd=0
+
+Here:
+- speed, position, black_screen, hide_osd: the same as in
+  "start_file_playback" command.
+- skip_frames: -1|1 (can only be used when the playback is paused (speed =
+  0); allows to navigate to next/prev key frame; is supported for DVD and
+  MKV only).
+
+http://10.0.0.1/cgi-bin/do?cmd=dvd_navigation&action=RIGHT
+Here:
+action: LEFT|RIGHT|UP|DOWN|ENTER
+
+==== Stop playback / switch to various player states ====
+
+http://10.0.0.1/cgi-bin/do?cmd=black_screen
+Stop playback (if any), go to the global "black_screen" state.
+
+http://10.0.0.1/cgi-bin/do?cmd=main_screen
+Stop playback (if any), go to the main screen of the player's menu
+
+http://10.0.0.1/cgi-bin/do?cmd=standby
+Stop playback (if any), go to standby state.
+
+==== Emulate a command from Remote Control ====
+
+http://10.0.0.1/cgi-bin/do?cmd=ir_code&ir_code=F40BBF00
+Here:
+- ir_code: 4-byte NEC IR code supported by Dune (see
+  http://dune-hd.com/support/rc), with bytes written in the opposite order
+  (e.g. RC button "1" = 00 BF 0B F4 => F40BBF00).
+
+==== Getting player status ====
+
+http://10.0.0.1/cgi-bin/do?cmd=status
+Do nothing, just return to the current player status.
+
+Command execution timeouts
+--------------------------
+
+The client gets response either when the command execution completes, or on
+timeout. The default timeout is 20 seconds. If timeout occurs, the
+"timeout" status is returned to the client, and the command execution is
+continued by the player; if needed the client can then poll the player with
+the "status" command to wait for the player to change its state as the
+result of this command. There is a special parameter "timeout", which
+allows to specify any other timeout (seconds) (1 sec is minumum).
+
+Example of "timeout" parameter usage:
+http://10.0.0.1/cgi-bin/do?
+cmd=start_file_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/file.mkv&speed=0&black_screen=1&hide_osd=1&timeout=1
+
+HTTP-response syntax
+--------------------
+
+<?xml version="1.0" ?>
+<command_result>
+<param name="protocol_version" value="1"/>
+<param name="command_status" value="ok"/>
+<param name="player_state" value="dvd_playback"/>
+<param name="playback_speed" value="256"/>
+<param name="playback_duration" value="5183"/>
+<param name="playback_position" value="3000"/>
+<param name="playback_dvd_menu" value="0"/>
+<param name="playback_is_buffering" value="0"/>
+</command_result>
+
+Here:
+- protocol_version: 1
+- command_status: ok|failed|timeout
+- player_state: file_playback|dvd_playback|bluray_playback|black_screen|standby|navigator
+
+If command_status is "failed", the response also contains the
+following parameters:
+- error_kind: unknown_command|invalid_parameters|illegal_state|internal_error|operation_failed
+- error_description: some text
+
+If player_state is "file_playback" or "dvd_playback", the response
+also contains the following parameters:
+- playback_speed: -1024/-512/-256/-128/-64/0/64/128/256/512/1024
+- playback_duration: duration in seconds (-1 or 0 if unknown)
+- playback_position: position in seconds (-1 if unknown)
+- playback_dvd_menu: 0|1 (1 means DVD-menu is currently shown)
+- playback_is_buffering: 0|1 (1 means buffering is in progress)
+
+Quick recommendations for using Dune as an embedded playback device
+-------------------------------------------------------------------
+
+- Set the setting "Setup / Misc / Power Management / Power on" to "Black
+  screen". => Dune will not show its menu by default on boot.
+
+- To play a M2TS file, send the NFS URL pointing to the file to Dune using
+  "start_file_playback" HTTP command.
+
+- To control the playback (pause, seek, etc), use "set_playback_state" HTTP
+  command.
+
+- To stop the playback, use "black_screen" (or "standby") HTTP command.
+
+- To implement any other things not explicitly supported by the HTTP
+  protocol, use "ir_code" HTTP comand to emulate RC button presses.
+
+Changes and new features, introduced in firmware updates
+========================================================
+
+Protocol "2" (starting with firmware version 111122_0159_beta)
+--------------------------------------------------------------
+
+   - Improved reporting of current state during playback of IPTV streams.
+   - Added information about available audiotracks during playback.
+   - Added the possibility to configure the following playback parameters
+     (via "set_playback_state"):
+      - video_enabled
+      - video_zoom
+      - video_fullscreen
+      - video_x
+      - video_y
+      - video_width
+      - video_height
+      - volume
+      - mute
+
+Protocol "3" (starting with firmware version 120531_2200_beta)
+--------------------------------------------------------------
+
+==== Start playback of playlist ====
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_playlist_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/mymovies.m3u&start_index=2
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_playlist_playback&media_url=nfs://10.0.0.1:/VideoStorage:/StarWars&start_index=3
+
+http://10.0.0.1/cgi-bin/do?
+cmd=start_playlist_playback&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/mymovies.m3u&start_index=0&speed=0&position=0&black_screen=1&hide_osd=1
+
+==== Start playback of media_url with media kind autodetect (file/DVD/BD) ====
+
+http://10.0.0.1/cgi-bin/do?
+cmd=launch_media_url&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/file.mkv
+
+http://10.0.0.1/cgi-bin/do?
+cmd=launch_media_url&media_url=smb://10.0.0.1/VideoStorage/SomeFolder/DVDFolder
+
+http://10.0.0.1/cgi-bin/do?
+cmd=launch_media_url&media_url=nfs://10.0.0.1:/VideoStorage:/SomeFolder/bluray_image.iso
+
+==== Start FlashLite app ====
+
+http://10.0.0.1/cgi-bin/do?
+cmd=launch_media_url&media_url=swf://nfs://10.0.0.1:/MiscStorage:/FlashApps/airplane.swf:::flash_param1=value
+
+NOTE: See http://dune-hd.com/support/flash for more details on SWF URL
+syntax.
+
+==== Start web browser with given URL ====
+
+http://10.0.0.1/cgi-bin/do?
+cmd=launch_media_url&media_url=www://http://google.com
+
+http://10.0.0.1/cgi-bin/do?
+cmd=launch_media_url&media_url=www://http://10.0.0.1/WebApps/my.html:::fullscreen=1&webapp_keys=1&zoom_level=100
+
+NOTE: See http://dune-hd.com/support/misc/media_url.txt for more details on
+WWW URL syntax.
+
+==== Get/set current text editor state ====
+
+http://10.0.0.1/cgi-bin/do?cmd=get_text
+Returns the currently being edited text string as value of "text" param.
+Returns "failed" command status if there is no active text editor.
+
+http://10.0.0.1/cgi-bin/do?cmd=set_text&text=some_text_string
+Replaces the currently edited text string with the given text string.
+Returns "failed" command status if there is no active text editor.
+Here:
+- text: the text string to be assigned (UTF-8).

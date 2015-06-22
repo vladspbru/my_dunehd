@@ -1,25 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-__author__ = 'vladislav'
-__version__ = '0.1'
-
-
-
-# Some global variables we use
-dune_ip='192.168.1.8'
-media_pc_netshared_dir='/vols/tmpbuf/torrents/cinema/_download'
-netshared_dir_for_dune='nfs://192.168.1.7:/VideoStorage:/SomeFolder/'
-shutdown_event = None
-
-
+from __future__ import unicode_literals
+import youtube_dl
 import time
 import os
 import sys
-import threading
-import re
 import signal
-import socket
-
 
 # Begin import game to handle Python 2 and Python 3
 try:
@@ -38,20 +24,29 @@ def ctrl_c(signum, frame):
     operations
     """
     global shutdown_event
-    shutdown_event.set()
     raise SystemExit('\nCancelling...')
 
-def version():
-    """Print the version"""
-    raise SystemExit(__version__)
+# Some global variables we use
+dune_ip = '192.168.1.8'
+media_pc_netshared_dir = '/vols/tmpbuf/torrents/cinema/_download'
+outtmpl = '%(title)s.%(ext)s'
+netshared_dir_for_dune = 'nfs://192.168.1.7:/myworld/cinema/_download'
+url = 'http://www.youtube.com/watch?v=BaW_jenozKc'
+
+filename = None
 
 
+def ydl_hook(d):
+    global filename
+    filename = None
+    if d['status'] == 'finished':
+        filename = d['filename']
 
-def send2dune():
-    global shutdown_event, dune_ip
-    shutdown_event = threading.Event()
+
+def ydl2dune():
+    pass
+    global dune_ip, media_pc_netshared_dir, outtmpl, netshared_dir_for_dune, url, filename
     signal.signal(signal.SIGINT, ctrl_c)
-
 
     description = (
         'Command line interface for Dune IP control.\n'
@@ -76,30 +71,41 @@ def send2dune():
         args = options
     del options
 
-    # Print the version and exit
-    if args.version:
-        version()
+    if not args.url:
+        print('Empty URL string.')
+        sys.exit(1)
 
     # If specified bind to a specific IP address
     if args.dune:
         dune_ip = args.dune
 
+    ydl_opts = {
+        # 'simulate': True,
+        'outtmpl': "%s/%s" % (media_pc_netshared_dir, outtmpl),
+        'restrictfilenames': True,
+        # 'forcefilename': True,
+        'progress_hooks': [ydl_hook],
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        res = ydl.download([url])
 
+    if int(res) != 0:
+        print('Could not download')
+        sys.exit(1)
 
+    media = filename.replace(media_pc_netshared_dir, netshared_dir_for_dune)
+    print("Sending [%s] to DuneHD" % (media))
 
-
+    apiData = ['cmd=%s' % 'status', ]
+    req = Request('http://%s/cgi-bin/do?' % (dune_ip), data='&'.join(apiData).encode())
+    f = urlopen(req)
+    print(f.read().decode())
+    f.close()
 
     apiData = [
         'cmd=%s' % 'launch_media_url',
-        'media_url=%s' % 2,
-        'speed=%s' % 0,
-        'position=%s' % 0,
-        'hide_osd=%s' % 1,
-        'black_screen=%s' % 0,
-        'action_on_finish=%s' % 'restart_playback'
+        'media_url=%s' % media,
     ]
-
-
     req = Request('http://%s/cgi-bin/do?' % (dune_ip), data='&'.join(apiData).encode())
     f = urlopen(req)
     response = f.read()
@@ -110,17 +116,12 @@ def send2dune():
         print('Could not submit results to DuneHD')
         sys.exit(1)
 
-    print (response.decode())
-    # qsargs = parse_qs(response.decode())
-    # resultid = qsargs.get('resultid')
-    # if not resultid or len(resultid) != 1:
-    #     print_('Could not submit results to DuneHD')
-    #     sys.exit(1)
+    print(response.decode())
 
 
 def main():
     try:
-        send2dune()
+        ydl2dune()
     except KeyboardInterrupt:
         print('\nCancelling...')
 

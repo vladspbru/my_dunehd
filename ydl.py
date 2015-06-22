@@ -1,9 +1,11 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-__author__ = 'vladislav'
-
-# from __future__ import unicode_literals
+from __future__ import unicode_literals
 import youtube_dl
+
+
+media_pc_netshared_dir='/vols/tmpbuf/torrents/cinema/_download'
+outtmpl='%(title)s.%(ext)s'
 
 
 class MyLogger(object):
@@ -23,8 +25,10 @@ def my_hook(d):
 
 
 ydl_opts = {
+    'outtmpl': outtmpl,
     'format': 'bestaudio/best',
     'simulate': 1,
+    'restrictfilenames': 1,
     'forcefilename': 1,
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
