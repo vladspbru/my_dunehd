@@ -2,16 +2,16 @@
 # -*- coding: utf-8 -*-
 __author__ = 'vladislav'
 
-from __future__ import unicode_literals
+# from __future__ import unicode_literals
 import youtube_dl
 
 
 class MyLogger(object):
     def debug(self, msg):
-        pass
+        print(msg)
 
     def warning(self, msg):
-        pass
+        print(msg)
 
     def error(self, msg):
         print(msg)
@@ -24,6 +24,8 @@ def my_hook(d):
 
 ydl_opts = {
     'format': 'bestaudio/best',
+    'simulate': 1,
+    'forcefilename': 1,
     'postprocessors': [{
         'key': 'FFmpegExtractAudio',
         'preferredcodec': 'mp3',
