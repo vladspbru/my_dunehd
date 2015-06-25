@@ -31,8 +31,9 @@ dune_ip = '192.168.1.8'
 media_pc_netshared_dir = '/vols/tmpbuf/torrents/cinema/_download'
 outtmpl = '%(title)s.%(ext)s'
 netshared_dir_for_dune = 'nfs://192.168.1.7:/myworld/cinema/_download'
-url = 'http://www.youtube.com/watch?v=BaW_jenozKc'
 
+
+url = 'http://www.youtube.com/watch?v=BaW_jenozKc'
 filename = None
 
 

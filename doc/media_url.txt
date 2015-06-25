@@ -1,0 +1,372 @@
+Information about "media_url" concept in Dune HD media players
+==============================================================
+
+NOTE: This information corresponds to firmware version 121018_0846 or
+later. Earlier firmware versions did not have some of the described
+features.
+
+Introduction
+------------
+
+The concept of "media_url" is widely used in Dune HD media players for
+various purposes.
+
+"media_url" is a string which typically points to some media content that
+can be played, optionally with some parameters which influence the
+playback.
+
+"media_url" can also point to some graphic resources (e.g. icon), and to
+some other kinds of files/resources (e.g. web page URL, optionally with
+some parameters which influence the way it should be handled by the web
+browser, or FlashLite application file, optionally with some parameters
+which influence the way it should be launched and run).
+
+"media_url" can be used in various contexts, in particular:
+   - Playlist files (e.g. .m3u).
+   - "dune_folder.txt" files.
+   - Dune HD IP Control API (by external applications).
+   - Dune HD PHP Plugins API (by PHP plugins).
+   - Dune HD FlashLite API (by FlashLite applications).
+   - Dune HD STB API (by HTML+JavaScript and DirectFB applications).
+
+Supported "media_url" for playback from network/Internet:
+---------------------------------------------------------
+
+   Multicast UDP/TS (raw-UDP or RTP-over-UDP), Live TV/radio:
+   ----------------------------------------------------------
+      Syntax:
+         udp://@{multicast-address}:{port}
+      Example:
+         udp://@239.0.1.1:1234
+      DRMs supported:
+         Verimatrix IPTV client.
+            NOTE: May require special firmware build and/or special
+            configuration (details are available upon request).
+
+   HTTP/TS, Live TV/radio:
+   --------------------------
+      Syntax:
+         http://ts://{host}[:{port}][/{path}]
+      Example:
+         http://ts://myserver.com/my_live_stream.ts
+      NOTE:
+         This is plain live MPEG2-TS stream over HTTP. Seek and duration
+         detection are not supported.
+      DRMs supported:
+         Verimatrix IPTV client.
+            NOTE: May require special firmware build and/or special
+            configuration (details are available upon request).
+
+   HLS (Apple HTTP Live Streaming), VOD or Live TV/radio:
+   ------------------------------------------------------
+      Syntax:
+         http://{host}[:{port}][/{path}].m3u8[?{args}]
+      Example:
+         http://myserver.com/my_content.m3u8
+      NOTE:
+         If HLS HTTP URL neither ends with ".m3u8" nor contains ".m3u8?",
+         you can use "protocol:hls" parameter to force the system to handle
+         the URL as HLS; example:
+            http://myserver.com/my_content|||dune_params|||protocol:hls
+      DRMs supported:
+         AES generic encryption.
+            NOTE: HLS key is retrieved directly using the URL provided by
+            the server. If it is needed to pass certain parameters to the
+            server when retrieving HLS key, it is possible to add these
+            parameters to the query part of the HLS URL using
+            "hls_key_url_add_query" parameter (see "Parameters for playback
+            URLs" section).
+         Verimatrix Web client.
+            NOTE: May require special firmware build and/or special
+            configuration (details are available upon request).
+
+   HTTP/MP4, VOD:
+   --------------
+      Syntax:
+         http://mp4://{host}[:{port}][/{path}]
+      Example:
+         http://mp4://myserver.com/my_file.mp4
+      NOTE:
+         This is a special MP4 playback mode intended for OTT (over
+         Internet) connections.
+      DRMs supported:
+         None.
+
+   RTSP/TS (RTSP+RTP or RTSP-over-TCP), VOD or Live TV/radio
+   ---------------------------------------------------------
+      Syntax:
+         rtsp://{host}[:{port}][/{path}]
+      Example:
+         rtsp://myserver.com/my_content
+      NOTE:
+         Only MPEG2-TS streams are supported. MPEG2-TS stream should be
+         either streamed via RTP (RTSP+RTP), or encapsulated into RTSP TCP
+         connection (RTP-TCP).
+      DRMs supported:
+         Verimatrix IPTV client.
+            NOTE: May require special firmware build and/or special
+            configuration (details are available upon request).
+
+   MMS/ASF (MMS-over-TCP or MMS-over-HTTP), Live TV/radio:
+   -------------------------------------------------------
+      Syntax:
+         mms[h]://{host}[:{port}][/{path}]
+      Example:
+         mms://myserver.com/my_radio_stream
+         mmsh://myserver.com/my_radio_stream
+      NOTE:
+         Rarely used and not well tested.
+      DRMs supported:
+         None.
+
+   HTTP generic (any file, audio streaming, playlist):
+   ---------------------------------------------------
+      Syntax:
+         http://{host}[:{port}][/{path}]
+      Example:
+         http://myserver.com/my_file.mkv
+         http://myserver.com/my_file.mp3
+         http://myserver.com/my_radio_stream.mp3
+         http://myserver.com/my_radio_stream
+         http://myserver.com/my_playlist.m3u
+      NOTE:
+         HTTP VOD playback may not work well over slow Internet
+         connections (buffering may be slow), and is mostly intended for
+         local networks (e.g. playback from UPnP server). For HTTP VOD
+         playback over Internet, it is recommended to use MP4 container and
+         "http://mp4://" syntax.
+      DRMs supported:
+         None.
+
+Supported "media_url" for files on filesystem-based storages:
+-------------------------------------------------------------
+
+   SMB, any file (e.g. video/audio/photo) or folder:
+   -------------------------------------------------
+      Syntax:
+         smb://[{user}[:{password}]@]{host}/{share}/{path}
+      Example:
+         smb://192.168.1.1/myshare/path/to/file.mkv
+         smb://admin@192.168.1.1/myshare/path/to/file.mkv
+         smb://admin:123456@192.168.1.1/myshare/path/to/file.mkv
+         smb://admin:123456@192.168.1.1/myshare/path/to/MY_FOLDER
+         smb://admin:123456@192.168.1.1/myshare/path/to/my_playlist.m3u
+
+   NFS (UDP or NFS), any file (e.g. video/audio/photo) or folder:
+   --------------------------------------------------------------
+      Syntax:
+         nfs[-tcp|-udp]://{host}[:/{nfs-export-path}]:/{path}
+      Example:
+         nfs://192.168.1.1:/export1:/path/to/file.mkv
+         nfs://192.168.1.1:/export1/path/to/file.mkv
+         nfs://192.168.1.1:/export1/path/to/MY_FOLDER
+         nfs://192.168.1.1:/export1/path/to/my_playlist.m3u
+         nfs-tcp://192.168.1.1:/export1/path/to/my_playlist.m3u
+      NOTE:
+         If {nfs-export-path} is not specified, it is attempted to be
+         deduced from {path}. When possible, it is recommended to
+         explicitly specify {nfs-export-path} for better performance.
+      NOTE:
+         The default is UDP. I.e. "nfs://" is equivelent to "nfs-udp://".
+
+   Content on a specified local storage device:
+   --------------------------------------------
+      Syntax:
+         storage_name://{storage-name}/{path}
+         storage_label://{storage-label}/{path}
+         storage_uuid://{storage-uuid}/{path}
+      Example:
+         storage_name://MY_FLASH_DRIVE/path/to/file.mkv
+         storage_label://MY_FLASH_DRIVE/path/to/file.mkv
+         storage_uuid://0123456789abcdef012345/path/to/file.mkv
+      NOTE:
+         See here for more information about storage name, storage label,
+         and storage uuid:
+            http://dune-hd.com/firmware/misc/dune_folder_howto.txt
+
+   Content on the same local storage device or the same SMB/NFS share:
+   -------------------------------------------------------------------
+      Syntax:
+         {path}
+         /{path}
+      Example:
+         file.mkv
+         some_folder/file.mkv
+         ../../../some_folder/other_folder/file.mkv
+         /path/to/file.mkv
+      NOTE:
+         Such URLs may only be used in "dune_folder.txt" or playlist files,
+         located on a local storage device, or on a SMB/NFS share.
+
+Supported "media_url" for special cases:
+----------------------------------------
+
+   File which is a part of plugin:
+   -------------------------------
+      Syntax:
+         plugin_file:///{path-relative-to-plugin-root-folder}
+      Example:
+         plugin_file:///icons/icon.png
+      NOTE:
+         Such URLs may only be used in context of plugin.
+
+   File from current GUI skin:
+   ---------------------------
+      Syntax:
+         gui_skin://{path-relative-to-skin-root-folder}
+      Example:
+         gui_skin://large_icons/tv.aai
+      NOTE:
+         Such URLs may only be used in contexts, where some GUI resource
+         (such as icon) is expected.
+
+Supported "media_url" for special actions
+-----------------------------------------
+
+   Launch FlashLite application:
+   -----------------------------
+      Syntax:
+         swf://{HTTP-or-file-URL}[:::{parameters}]
+      Example:
+         swf://http://myserver.com/path/to/app.swf
+         swf://http://myserver.com/path/to/app:::id=29
+         swf://../../my_folder/file.swf:::id=29
+         swf://plugin_file://app.swf:::id=29
+      NOTE:
+         See "Parameters for SWF URLs" section.
+
+   Launch web browser and load HTML page from given URL:
+   -----------------------------------------------------
+      Syntax:
+         www://{HTTP-or-file-URL}[:::{parameters}]
+      Example:
+         www://http://myserver.com
+         www://http://myserver.com:::fullscreen=1&webapp_keys=1&zoom_level=100&overscan=0&background_color=black
+         www://plugin_file://index.html:::fullscreen=1&webapp_keys=1&zoom_level=100&overscan=0&background_color=black
+         www://127.0.0.1/cgi-bin/plugins/my_plugin/a.cgi?arg=value:::fullscreen=1
+      NOTE:
+         See "Parameters for WWW URLs" section.
+
+Parameters for SWF URLs
+-----------------------
+
+See here:
+   http://dune-hd.com/firmware/flash/flashlite_info.txt
+
+Parameters for WWW URLs
+-----------------------
+
+Syntax:
+   www://{HTTP-or-file-URL}:::param1=value1&...&paramN=valueN
+
+Example:
+   www://http://myserver.com/action?x=10:::fullscreen=1&zoom_level=150
+
+Supported parameters:
+
+   fullscreen=0|1 (default: 0)
+      0 = show standard web browser controls, such as URL bar.
+      1 = HTML page takes full screen, no web browser controls are shown.
+      NOTE: 1 is recommended for fullscreen TV-apps.
+
+   webapp_keys=0|1 (default: 0)
+      0 = certain keys/buttons (e.g. STOP) are handled by web browser
+        itself.
+      1 = JavaScript code in HTML page handles all keys/buttons.
+      NOTE: 1 is recommended for fullscreen TV-apps.
+
+   zoom_level={N} (default: according to user-defined settings)
+      100 = no zoom (render HTML page 1:1).
+      NOTE: 100 is recommended for fullscreen TV-apps.
+
+   overscan={N} (default: according to user-defined settings)
+      0 = no overscan (100% fullscreen)
+      NOTE: 0 is recommended for fullscreen TV-apps.
+
+   user_agent={string} (default: web browser defined)
+      NOTE: Redefine user agent string sent by web browser.
+
+   background_color={color} (default: white)
+      NOTE: 'black' is recommended for fullscreen TV-apps with black or
+      dark background.
+
+   osd_size=720x480|720x576|1280x720|1920x1080 (default: according to
+      current video mode)
+      NOTE: for fullscreen TV-apps rendered for a particular screen
+      resolution (e.g. 1280x720), this resolution should be specified here.
+
+Parameters for playback URLs
+----------------------------
+
+Syntax:
+   {media_url}|||dune_params|||param1:value1,...,paramN:valueN
+
+Example:
+   http://myserver.com/my_content|||dune_params|||protocol:hls,buffering_ms:2000
+
+Supported parameters:
+
+   rtsp_tcp:0|1 (default: 0)
+      Only for RTSP URLs.
+      0 = RTSP+RTP is preferred, RTSP-TCP is autodetected when possible.
+      1 = RTSP-TCP is forced.
+
+   rtsp_seek_via_reopen:0|1 (default: 0)
+      Only for RTSP URLs.
+      0 = seek is performed w/o full RTSP stream reopen.
+      1 = seek is performed with full RTSP stream reopen (needed/useful for
+        some RTSP servers).
+
+   protocol:hls (default: autodetect)
+      NOTE: Other values are not supported.
+      Force HLS protocol for HTTP URLs. Needed when HTTP URL neither
+      ends with ".m3u8" nor contains ".m3u8?".
+
+   hls_initial_bandwidth:low|high|auto|auto_high (default: according to
+   user settings, which is "auto" by default)
+      Only for HLS URLs.
+      low:
+         On HLS URL playback startup, the lowest possible bitrate is used
+         initially.
+      high:
+         On HLS URL playback startup, the highest possible bitrate is used
+         initially.
+      auto:
+         On HLS URL playback startup, the bitrate corresponding to the
+         latest actual bitrate is used initially, or the lowest possible
+         bitrate if there is no remembered latest actual bitrate. This is
+         the recommended option.
+      auto_high:
+         On HLS URL playback startup, the bitrate corresponding to the
+         latest actual bitrate is used initially, or the highest possible
+         bitrate if there is no remembered latest actual bitrate.
+
+   hls_key_url_add_query:{string} (default: none)
+      Only for HLS URLs.
+      Only when AES encryption is used.
+      When specified, {string} is added to the query part of HLS AES key
+      URL which is used to retrieve HLS AES key. If the key URL already
+      contains the query part, '&' is added before {string}, otherwise '?'
+      is added before {string}. Single comma is not allowed inside the
+      string because it has the meaning of parameters delimiter. To
+      specify a comma use double comma instead so that "aaa=bbb,,ccc" means
+      "aaa=bbb,ccc".
+      Example:
+         http://myserver.com/a.m3u8|||dune_params|||hls_key_url_add_query:auth_token=12345678
+
+   enable_seek:0|1 (default: 1)
+      NOTE: Is currently supported for HLS protocol only.
+      0 = time seek operations are disabled.
+      1 = time seek operations are enabled (when possible, i.e. for VOD
+        content).
+
+   buffering_ms:1..60000 (default: according to user-defined settings)
+      NOTE: Is currently supported for HLS and HTTP/TS protocols only.
+      Specifies buffering period (buffer size) in milliseconds.
+
+   deint_mode:off|bob|adaptive (default: according to user-defined
+   settings)
+      Allows to explicitly specify the desired deinterlacing mode. 
+      Useful e.g. in the following case: an application performs playback
+      of an IPTV channel with interlaced video stream and wants to ensure
+      "adaptive" deinterlacing mode for this IPTV channel.

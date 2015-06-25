@@ -4,22 +4,15 @@ __author__ = 'vladislav'
 __version__ = '0.1'
 
 
-
-# Some global variables we use
-dune_ip='192.168.1.8'
-media_pc_netshared_dir='/vols/tmpbuf/torrents/cinema/_download'
-netshared_dir_for_dune='nfs://192.168.1.7:/VideoStorage:/SomeFolder/'
-shutdown_event = None
+class HomeConfiguration(object):
+    DUNE_IP = '192.168.1.8'
 
 
 import time
 import os
 import sys
 import threading
-import re
 import signal
-import socket
-
 
 # Begin import game to handle Python 2 and Python 3
 try:
@@ -33,6 +26,8 @@ except ImportError:
     from urllib.request import urlopen, Request, HTTPError, URLError
 
 
+# Some global variables we use
+shutdown_event = None
 def ctrl_c(signum, frame):
     """Catch Ctrl-C key sequence and set a shutdown_event for our threaded
     operations
@@ -44,7 +39,6 @@ def ctrl_c(signum, frame):
 def version():
     """Print the version"""
     raise SystemExit(__version__)
-
 
 
 def send2dune():
