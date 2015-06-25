@@ -4,9 +4,17 @@ Dune HD IP control scripts
 
 Installation
 ------------
-...
+requirement packets:
+  youtube_dl, jq, curl 
+
+copy ydl2dune.sh to ~/bin
+config you own params ydl2dune.sh:
+    DUNE_IP=192.168.1.1
+    NETSRV_=192.168.1.2:/share
+    OUTDIR='/vols/tmpbuf/shared/cinema/_download'
+    NET="nfs://$NETSRV_/cinema/_download"
 
 
 Running
 -------
-...
+    pc: ydl2dune.sh 'http://www.youtube.com/watch?v=BaW_jenozKc'
